@@ -213,4 +213,9 @@ target_link_libraries(a2ui-capi PUBLIC
     libnative_media_core.so
     pixelmap
     libdeviceinfo_ndk.z.so
+    # FFRT via @ppd/ffrt: ffrt::ffrt_cpp = package IMPORTED target (from the
+    # PACKAGE_FIND_FILE include above; provides headers + libffrt_cpp.so);
+    # libffrt.z.so = system FFRT runtime on the device.
+    ffrt::ffrt_cpp
+    libffrt.z.so
 )
