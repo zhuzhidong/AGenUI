@@ -1,0 +1,10 @@
+# Python virtualenv & bytecode (repo root also covers these, keep local too)
+.venv/
+__pycache__/
+*.pyc
+
+# Frontend build artifact — served by FastAPI, not checked in (see README)
+server/static/
+
+# OS
+.DS_Store
