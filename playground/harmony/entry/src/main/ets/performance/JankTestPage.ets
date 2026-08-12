@@ -22,6 +22,7 @@ struct JankTestPage {
 
   private sm: SurfaceManager | null = null;
   private engine: JankScenarioEngine | null = null;
+  private smoothDir: number = 1;
 
   aboutToAppear() {
     const context = getContext(this) as common.UIAbilityContext;
@@ -71,9 +72,29 @@ struct JankTestPage {
     this.stopEverything();
     this.smoothRunning = true;
     this.animPos = 0;
-    this.getUIContext().animateTo({ duration: 2000, curve: Curve.EaseInOut, iterations: -1, playMode: PlayMode.Alternate }, () => {
-      this.animPos = 200;
-    });
+    this.smoothDir = 1;
+    this.kickSmoothAnim();
+  }
+
+  private kickSmoothAnim(): void {
+    if (!this.smoothRunning) {
+      return;
+    }
+    this.getUIContext().animateTo(
+      {
+        duration: 1000,
+        curve: Curve.EaseInOut,
+        onFinish: () => {
+          if (this.smoothRunning) {
+            this.smoothDir = -this.smoothDir;
+            this.kickSmoothAnim();
+          }
+        }
+      },
+      () => {
+        this.animPos = this.smoothDir > 0 ? 200 : 0;
+      }
+    );
   }
 
   build() {
