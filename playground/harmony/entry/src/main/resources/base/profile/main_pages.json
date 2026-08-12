@@ -2,6 +2,7 @@
   "src": [
     "pages/AGenUIDemoPage",
     "pages/UITestPage",
-    "stability/StabilityTestPage"
+    "stability/StabilityTestPage",
+    "performance/JankTestPage"
   ]
 }
