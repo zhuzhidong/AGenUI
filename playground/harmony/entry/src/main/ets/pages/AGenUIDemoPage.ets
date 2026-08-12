@@ -2,7 +2,8 @@ import { resourceManager } from '@kit.LocalizationKit';
 import { JSON } from '@kit.ArkTS';
 import util from '@ohos.util';
 import { common, ConfigurationConstant } from '@kit.AbilityKit';
-import { UIContext, promptAction } from '@kit.ArkUI';
+import { UIContext, promptAction, router } from '@kit.ArkUI';
+import { FpsOverlay } from '../components/FpsOverlay';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -173,6 +174,7 @@ struct Index {
   @State surfaceVersion: number = 0;
   /** Whether dark mode is currently active. */
   @State isDarkMode: boolean = false;
+  @State isFpsOverlayOn: boolean = false;
   /** Text shown in the top error banner (empty string hides the banner). */
   @State errorBannerText: string = '';
 
@@ -806,6 +808,14 @@ struct Index {
     this.isDrawerOpen = !this.isDrawerOpen;
   }
 
+  private toggleFpsOverlay() {
+    this.isFpsOverlayOn = !this.isFpsOverlayOn;
+  }
+
+  private openJankLab() {
+    router.pushUrl({ url: 'performance/JankTestPage' });
+  }
+
   /** Opens the JSON editor panel, defaulting to the Components tab. */
   private openEditor() {
     this.currentTabIndex = 0;
@@ -951,6 +961,28 @@ struct Index {
               .onChange((isOn: boolean) => {
                 this.isDarkMode = isOn;
                 this.applyThemeMode(isOn);
+              })
+          }
+          .margin({ right: 12 })
+          .alignItems(VerticalAlign.Center)
+
+          Text('Jank Lab')
+            .fontSize(14)
+            .fontColor(Color.White)
+            .margin({ right: 12 })
+            .onClick(() => { this.openJankLab(); })
+
+          Row() {
+            Text('📊')
+              .fontSize(14)
+              .fontColor(Color.White)
+              .margin({ right: 4 })
+            Toggle({ type: ToggleType.Switch, isOn: this.isFpsOverlayOn })
+              .width(40)
+              .height(22)
+              .selectedColor(COLOR_ACCENT_SECONDARY)
+              .onChange((isOn: boolean) => {
+                this.isFpsOverlayOn = isOn;
               })
           }
           .margin({ right: 12 })
@@ -1239,6 +1271,10 @@ struct Index {
         .width('100%')
         .padding({ left: 12, right: 12 })
         .margin({ top: 8 })
+      }
+
+      if (this.isFpsOverlayOn) {
+        FpsOverlay({ scenario: this.currentTitle, errorText: '' })
       }
     }
     .width('100%')
