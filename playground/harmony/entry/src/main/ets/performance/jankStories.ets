@@ -18,6 +18,16 @@ interface ComponentDef {
   children?: string[];
 }
 
+interface UpdateComponentsPayload {
+  surfaceId: string;
+  components: ComponentDef[];
+}
+
+interface BaselinePayload {
+  version: string;
+  updateComponents: UpdateComponentsPayload;
+}
+
 const LIST_ITEM_COUNT = 10;
 const listItemIds: string[] = [];
 for (let i = 0; i < LIST_ITEM_COUNT; i++) {
@@ -33,13 +43,15 @@ for (let i = 0; i < LIST_ITEM_COUNT; i++) {
   baselineComponents.push({ id: `li-${i}`, component: 'Text', text: `Item ${i}`, variant: 'body' });
 }
 
-export const JANK_BASELINE_JSON: string = JSON.stringify({
+const baselineJson: BaselinePayload = {
   version: 'v0.9',
   updateComponents: { surfaceId: JANK_BASELINE_SURFACE_ID, components: baselineComponents }
-});
+};
+export const JANK_BASELINE_JSON: string = JSON.stringify(baselineJson);
 
 /** Valid tiny payload spammed by TinyChunkStream to stress the stream parser. */
-export const JANK_BASELINE_CHUNK: string = JSON.stringify({
+const baselineChunk: BaselinePayload = {
   version: 'v0.9',
   updateComponents: { surfaceId: JANK_BASELINE_SURFACE_ID, components: [] }
-});
+};
+export const JANK_BASELINE_CHUNK: string = JSON.stringify(baselineChunk);

@@ -45,7 +45,7 @@ export struct FpsOverlay {
       }
     });
     this.ds.start();
-    this.aggregateTimer = setInterval(() => this.aggregate(), 500);
+    this.aggregateTimer = setInterval((): void => { this.aggregate(); }, 500);
     hilog.info(DOMAIN, TAG, 'displaySync started');
   }
 
