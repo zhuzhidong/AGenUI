@@ -35,7 +35,7 @@ for (let i = 0; i < LIST_ITEM_COUNT; i++) {
 }
 
 const baselineComponents: ComponentDef[] = [
-  { id: 'root', component: 'Column', align: 'stretch', children: ['block', 'list', ...listItemIds] },
+  { id: 'root', component: 'Column', align: 'stretch', children: ['block', 'list'] },
   { id: 'block', component: 'Text', text: '█', variant: 'h1' },
   { id: 'list', component: 'List', children: listItemIds }
 ];

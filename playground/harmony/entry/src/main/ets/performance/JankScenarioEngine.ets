@@ -162,7 +162,7 @@ export class JankScenarioEngine {
     const tick = (): void => {
       if (JankLoopScheduler.isRoundCapped(round, JankLoopScheduler.MAX_ROUNDS)) { this.stop(); return; }
       // Allocate ~5MB then drop the reference, forcing periodic GC pauses.
-      const buf: number[] = new Array(655360);
+      const buf: number[] = new Array(655360).fill(0);
       buf[0] = round;
       round++;
     };
