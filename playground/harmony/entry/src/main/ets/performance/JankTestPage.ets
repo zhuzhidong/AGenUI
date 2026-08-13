@@ -134,31 +134,60 @@ struct JankTestPage {
         }
         .width('100%').height(56).backgroundColor('#6200EE').alignItems(VerticalAlign.Center)
 
-        // Visible baseline surface (the "canvas")
-        Scroll() {
-          Column() {
-            // ArkUI moving square (for SetTimeoutAnimation / smooth compare)
-            Row() {
-              Column()
-                .width(40).height(40)
-                .backgroundColor('#BB86FC')
-                .margin({ left: this.animPos })
-            }
-            .width('100%').height(60)
+        // Visible baseline surface (the "canvas"). Overdraw overlays here,
+        // confined to the content region so the top bar + buttons stay tappable.
+        Stack() {
+          Scroll() {
+            Column() {
+              // ArkUI moving square (for SetTimeoutAnimation / smooth compare)
+              Row() {
+                Column()
+                  .width(40).height(40)
+                  .backgroundColor('#BB86FC')
+                  .margin({ left: this.animPos })
+              }
+              .width('100%').height(60)
 
-            ForEach(
-              this.surfaceId ? [this.surfaceId] : [],
-              (sid: string) => {
-                AGenUIContainer({ surfaceId: sid, instanceId: this.sm?.getInstanceId() ?? 0 })
-                  .width('100%')
-              },
-              (_sid: string) => `jank_${this.surfaceVersion}`
-            )
+              ForEach(
+                this.surfaceId ? [this.surfaceId] : [],
+                (sid: string) => {
+                  AGenUIContainer({ surfaceId: sid, instanceId: this.sm?.getInstanceId() ?? 0 })
+                    .width('100%')
+                },
+                (_sid: string) => `jank_${this.surfaceVersion}`
+              )
+            }
+            .width('100%')
           }
-          .width('100%')
+          .width('100%').height('100%').scrollBar(BarState.Off).edgeEffect(EdgeEffect.None)
+          .backgroundColor(Color.White)
+
+          // Overdraw overlay — 200 translucent layers + a moving child (reuses
+          // animPos via kickSmoothAnim) forcing per-frame recomposite.
+          if (this.overdrawVisible) {
+            Stack() {
+              ForEach(this.overdrawLayers, (_i: number) => {
+                Column()
+                  .width('100%')
+                  .height('100%')
+                  .backgroundColor('rgba(255, 0, 0, 0.2)')
+              }, (i: number) => `od-${i}`)
+              Row() {
+                Column()
+                  .width(40)
+                  .height(40)
+                  .backgroundColor('#BB86FC')
+                  .margin({ left: this.animPos })
+              }
+              .width('100%')
+              .height(60)
+            }
+            .width('100%')
+            .height('100%')
+            .backgroundColor('#1A1A1A')
+          }
         }
-        .width('100%').layoutWeight(1).scrollBar(BarState.Off).edgeEffect(EdgeEffect.None)
-        .backgroundColor(Color.White)
+        .width('100%').layoutWeight(1)
 
         // Buttons, grouped: 7 jank scenarios wrap above; Stop (red, control)
         // + animateTo (smooth-compare) as a full-width control row below.
@@ -199,32 +228,6 @@ struct JankTestPage {
         .padding({ left: 8, right: 8, top: 4, bottom: 8 })
       }
       .width('100%').height('100%')
-
-      // Overdraw overlay — 200 translucent full-screen layers + a moving child
-      // (reuses animPos driven by kickSmoothAnim) so each frame recomposites
-      // the whole stack. GPU/compose-bound, not main-thread-bound.
-      if (this.overdrawVisible) {
-        Stack() {
-          ForEach(this.overdrawLayers, (_i: number) => {
-            Column()
-              .width('100%')
-              .height('100%')
-              .backgroundColor('rgba(255, 0, 0, 0.2)')
-          }, (i: number) => `od-${i}`)
-          Row() {
-            Column()
-              .width(40)
-              .height(40)
-              .backgroundColor('#BB86FC')
-              .margin({ left: this.animPos })
-          }
-          .width('100%')
-          .height(60)
-        }
-        .width('100%')
-        .height('100%')
-        .backgroundColor('#1A1A1A')
-      }
 
       // FPS overlay — remounted (keyed on activeScenario) so droppedCount
       // resets to zero for each scenario run, giving a fresh per-scenario
