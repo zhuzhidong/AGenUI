@@ -32,7 +32,6 @@ playground/harmony/entry/src/main/
 ├── resources/rawfile/stories/Jank/               ← 结构型（纯 JSON，进菜单，一级分类）
 │   ├── MassiveTree/updateComponents.json
 │   ├── DeepNesting/updateComponents.json
-│   ├── Overdraw/updateComponents.json
 │   └── HugePayload/updateComponents.json
 ├── ets/components/
 │   └── FpsOverlay.ets            ← 共享，displaySync 驱动的帧率覆盖层
@@ -43,8 +42,8 @@ playground/harmony/entry/src/main/
 └── resources/base/profile/main_pages.json           ← 加 pages/JankTestPage
 ```
 
-- **结构型**：4 个 `updateComponents.json` 放进 story 目录，作为一级分类 `Jank`（与 `A2UI Show` 平级），`AGenUIDemoPage` 菜单出现 "Jank" 分类（菜单为两级：一级 `A2UI Show` / `Jank`，二级为各 story 叶子）。顶栏加 `📊 FPS` 开关，开启后挂 `FpsOverlay`，结构型卡顿也带帧率。
-- **时序型**：新 `JankTestPage`（`@Entry`），自有 `SurfaceManager` + 可见 `AGenUIContainer` 渲染基准画面 + 场景按钮 + `FpsOverlay`。从 `AGenUIDemoPage` 顶栏加入口按钮，用 ArkUI `router.pushUrl('pages/JankTestPage')` 跳转，无需新 Ability。
+- **结构型**：3 个 `updateComponents.json` 放进 story 目录，作为一级分类 `Jank`（与 `A2UI Show` 平级），`AGenUIDemoPage` 菜单出现 "Jank" 分类（菜单为两级：一级 `A2UI Show` / `Jank`，二级为各 story 叶子）。顶栏加 `📊 FPS` 开关，开启后挂 `FpsOverlay`，结构型卡顿也带帧率。
+- **时序型**：新 `JankTestPage`（`@Entry`），自有 `SurfaceManager` + 可见 `AGenUIContainer` 渲染基准画面 + 场景按钮 + `FpsOverlay`。共 7 个场景：6 个 AGenUI 相关（MainThreadBlock/StateChurn/TinyChunkStream/SetTimeoutAnimation/SurfaceThrash/MemoryChurn）+ Overdraw（ArkUI 原生 `Stack` 叠 200 层半透明 + `animateTo` 移动子元素，因 A2UI 无 `Stack` 组件，纯 JSON 无法表达层叠）。从 `AGenUIDemoPage` 顶栏加入口按钮，用 ArkUI `router.pushUrl('pages/JankTestPage')` 跳转，无需新 Ability。
 
 ## 4. 组件职责
 
@@ -83,33 +82,35 @@ aboutToAppear
 
 ## 7. 场景清单
 
-### 7.1 结构型（JSON story，4 个）
+### 7.1 结构型（JSON story，3 个）
 
 放 `playground/resource/stories/Jank/<Name>/updateComponents.json`（一级分类 `Jank`，与 `A2UI Show` 平级；`AGenUIDemoPage` 菜单为两级，故须作为一级分类才能在二级出现 story 叶子）。组件只用 Text/Column/Row（无媒体资源依赖）。
 
 > **同步机制**：仓库中 `playground/resource/stories/`（跨平台 canonical 源）与 `playground/harmony/entry/src/main/resources/rawfile/stories/`（DevEco 运行时实际读取）是两份 git 跟踪的副本，由生成脚本 `scripts/harmony/gen_jank_stories.py` 同时写入两处保持同步。
 
-| Story         | 卡顿机理                                        | 规模                               |
-| ------------- | ----------------------------------------------- | ---------------------------------- |
-| `MassiveTree` | 扁平大宽表，一次挂载触发大量 measure/layout     | 1 个 Column + 500 个 Text          |
-| `DeepNesting` | 嵌套深，layout 自顶向下递归代价高               | Column 嵌 30 层，每层 3 个 Text    |
-| `Overdraw`    | 多层半透明 Stack 叠加，每像素反复合成           | 20 层 Stack 半透明背景 + 1 个 Text |
-| `HugePayload` | 单条 `updateComponents` 载荷过大，parse+diff 慢 | 1 个 Text 的 `text` 塞 ~200KB      |
+| Story         | 卡顿机理                                        | 规模                            |
+| ------------- | ----------------------------------------------- | ------------------------------- |
+| `MassiveTree` | 扁平大宽表，一次挂载触发大量 measure/layout     | 1 个 Column + 500 个 Text       |
+| `DeepNesting` | 嵌套深，layout 自顶向下递归代价高               | Column 嵌 30 层，每层 3 个 Text |
+| `HugePayload` | 单条 `updateComponents` 载荷过大，parse+diff 慢 | 1 个 Text 的 `text` 塞 ~200KB   |
 
 每个文件 `version: v0.9` + `updateComponents`，参照现有 List story 结构。
 
-### 7.2 时序型（ArkTS，6 个，JankTestPage 按钮）
+> Overdraw 原计划在此（半透明层叠加），但 A2UI 标准组件目录无 `Stack`/绝对定位组件，纯 JSON 叠不出真正层叠 → 页面为空。故移到时序型 §7.2 用 ArkUI 原生 `Stack` 实现。
 
-每个循环型场景跑到用户按 **Stop**；`engine.stop()` 清所有句柄。
+### 7.2 时序型（ArkTS，7 个，JankTestPage 按钮）
 
-| 场景                  | 坏行为驱动器                                                 | 基准画面现象   |
-| --------------------- | ------------------------------------------------------------ | -------------- |
-| `MainThreadBlock`     | `setInterval(100ms)` 内 `while(Date.now()<end){}` 跑 50ms    | 周期性冻结     |
-| `StateChurn`          | `setInterval(5ms)` 调 `syncState` 刷同一值                   | 列表闪烁/抖动  |
-| `TinyChunkStream`     | `receiveTextChunk` 把基准 JSON 切 500 个 ~40 字节小块连推    | 渲染抖动、闪屏 |
-| `SetTimeoutAnimation` | `setInterval(16ms)` 改 `@State` 移动方块 vs `animateTo` 对照 | 前者掉帧后者顺 |
-| `SurfaceThrash`       | 循环 `createSurface`→`deleteSurface`                         | 画面闪退重建   |
-| `MemoryChurn`         | `setInterval` 每轮分配 5MB 数组再丢                          | 周期性 GC 卡顿 |
+每个循环型场景跑到用户按 **Stop**；`engine.stop()` 清所有句柄。Overdraw 例外：由 `animateTo` 驱动，`Stop` 即停，不走轮次上限。
+
+| 场景                  | 坏行为驱动器                                                 | 基准画面现象       |
+| --------------------- | ------------------------------------------------------------ | ------------------ |
+| `MainThreadBlock`     | `setInterval(100ms)` 内 `while(Date.now()<end){}` 跑 50ms    | 周期性冻结         |
+| `StateChurn`          | `setInterval(5ms)` 调 `syncState` 刷同一值                   | 列表闪烁/抖动      |
+| `TinyChunkStream`     | `receiveTextChunk` 把基准 JSON 切 500 个 ~40 字节小块连推    | 渲染抖动、闪屏     |
+| `SetTimeoutAnimation` | `setInterval(16ms)` 改 `@State` 移动方块 vs `animateTo` 对照 | 前者掉帧后者顺     |
+| `SurfaceThrash`       | 循环 `createSurface`→`deleteSurface`                         | 画面闪退重建       |
+| `MemoryChurn`         | `setInterval` 每轮分配 5MB 数组再丢                          | 周期性 GC 卡顿     |
+| `Overdraw`            | ArkUI 原生 `Stack` 叠 200 层半透明 + `animateTo` 移动子元素  | GPU 合成过载、掉帧 |
 
 ## 8. 基准画面（时序页画布）
 

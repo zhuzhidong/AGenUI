@@ -16,8 +16,8 @@ import util from '@ohos.util';
 
 export default function jankStorySmoke() {
   describe('JankStorySmoke', () => {
-    const stories = ['MassiveTree', 'DeepNesting', 'Overdraw', 'HugePayload'];
-    const expectedSurface = ['jank-massive', 'jank-deep', 'jank-overdraw', 'jank-huge'];
+    const stories = ['MassiveTree', 'DeepNesting', 'HugePayload'];
+    const expectedSurface = ['jank-massive', 'jank-deep', 'jank-huge'];
 
     let context: common.UIAbilityContext;
 

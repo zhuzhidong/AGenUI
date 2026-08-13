@@ -36,14 +36,6 @@ def deep_nesting() -> dict:
     comps += [{"id": t, "component": "Text", "text": "deep", "variant": "body"} for t in ids_text]
     return {"version": "v0.9", "updateComponents": {"surfaceId": "jank-deep", "components": comps}}
 
-def overdraw() -> dict:
-    layers = [f"s{i}" for i in range(20)]
-    components = [{"id": "root", "component": "Stack", "children": layers}]
-    components += [{"id": f"s{i}", "component": "Column", "backgroundColor": "rgba(255,0,0,0.2)", "width": "100%", "height": "100%"} for i in range(20)]
-    components.append({"id": "center", "component": "Text", "text": "OVERDRAW", "variant": "h1"})
-    components[0]["children"].append("center")
-    return {"version": "v0.9", "updateComponents": {"surfaceId": "jank-overdraw", "components": components}}
-
 def huge_payload() -> dict:
     big = "x" * 200000
     components = [
@@ -55,9 +47,8 @@ def huge_payload() -> dict:
 def main() -> None:
     write("MassiveTree", massive_tree())
     write("DeepNesting", deep_nesting())
-    write("Overdraw", overdraw())
     write("HugePayload", huge_payload())
-    print("generated 4 jank stories into resource + rawfile")
+    print("generated 3 jank stories into resource + rawfile")
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,10 @@ import { JankScenarioEngine } from './JankScenarioEngine';
 const TAG = 'JankTestPage';
 const DOMAIN = 0x0000;
 const COLORS = ['#6200EE', '#3700B3', '#4D95E5', '#BB86FC', '#03DAC5', '#FF6666'];
+const OVERDRAW_LAYER_COUNT = 200;
+// Button list = the 6 engine-driven scenarios + Overdraw (rendered page-side,
+// since A2UI has no Stack component to express translucent layer stacking).
+const SCENARIO_BUTTONS: string[] = JankScenarioEngine.SCENARIO_NAMES.concat('Overdraw');
 
 @Entry
 @Component
@@ -19,6 +23,8 @@ struct JankTestPage {
   @State errorText: string = '';
   @State animPos: number = 0;
   @State smoothRunning: boolean = false;
+  @State overdrawVisible: boolean = false;
+  @State overdrawLayers: number[] = [];
 
   private sm: SurfaceManager | null = null;
   private engine: JankScenarioEngine | null = null;
@@ -49,6 +55,9 @@ struct JankTestPage {
       (pos: number) => { this.animPos = pos; }
     );
     this.engine.loadBaseline();
+    for (let i = 0; i < OVERDRAW_LAYER_COUNT; i++) {
+      this.overdrawLayers.push(i);
+    }
   }
 
   aboutToDisappear() {
@@ -60,11 +69,25 @@ struct JankTestPage {
   private stopEverything() {
     this.engine?.stop();
     this.smoothRunning = false;
+    this.overdrawVisible = false;
   }
 
   private runScenario(name: string) {
-    this.smoothRunning = false;
+    this.stopEverything();
     this.animPos = 0;
+    if (name === 'Overdraw') {
+      // 200 translucent ArkUI Stack layers + an animateTo-driven moving child
+      // that forces the compositor to recomposite every layer each frame.
+      // A2UI has no Stack component, so this is rendered natively (page-side).
+      this.activeScenario = name;
+      this.isRunning = true;
+      this.errorText = '';
+      this.overdrawVisible = true;
+      this.smoothRunning = true;
+      this.smoothDir = 1;
+      this.kickSmoothAnim();
+      return;
+    }
     this.engine?.run(name);
   }
 
@@ -137,29 +160,54 @@ struct JankTestPage {
         .width('100%').layoutWeight(1).scrollBar(BarState.Off).edgeEffect(EdgeEffect.None)
         .backgroundColor(Color.White)
 
-        // Scenario buttons
-        Scroll() {
-          Row() {
-            ForEach(JankScenarioEngine.SCENARIO_NAMES, (name: string, i: number) => {
-              Button(name)
-                .fontSize(11)
-                .backgroundColor(this.activeScenario === name && this.isRunning ? '#03DAC5' : COLORS[i % COLORS.length])
-                .fontColor(Color.White)
-                .margin({ left: 6, right: 6 })
-                .onClick(() => this.runScenario(name))
-            })
-            Button('Stop')
-              .fontSize(11).backgroundColor('#FF6666').fontColor(Color.White).margin({ left: 6, right: 6 })
-              .onClick(() => this.stopEverything())
-            Button('animateTo')
-              .fontSize(11).backgroundColor('#4D95E5').fontColor(Color.White).margin({ left: 6, right: 6 })
-              .onClick(() => this.startSmoothAnim())
-          }
-          .padding(8)
+        // Scenario buttons — wrap so all are visible/tappable (a single
+        // horizontal Row overflowed and most buttons were unreachable).
+        Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
+          ForEach(SCENARIO_BUTTONS, (name: string, i: number) => {
+            Button(name)
+              .fontSize(11)
+              .backgroundColor(this.activeScenario === name && this.isRunning ? '#03DAC5' : COLORS[i % COLORS.length])
+              .fontColor(Color.White)
+              .margin({ left: 4, right: 4, top: 4, bottom: 4 })
+              .onClick(() => this.runScenario(name))
+          })
+          Button('Stop')
+            .fontSize(11).backgroundColor('#FF6666').fontColor(Color.White).margin({ left: 4, right: 4, top: 4, bottom: 4 })
+            .onClick(() => this.stopEverything())
+          Button('animateTo')
+            .fontSize(11).backgroundColor('#4D95E5').fontColor(Color.White).margin({ left: 4, right: 4, top: 4, bottom: 4 })
+            .onClick(() => this.startSmoothAnim())
         }
-        .width('100%').scrollBar(BarState.Off).align(Alignment.Center)
+        .width('100%')
+        .padding({ left: 8, right: 8, top: 4, bottom: 8 })
       }
       .width('100%').height('100%')
+
+      // Overdraw overlay — 200 translucent full-screen layers + a moving child
+      // (reuses animPos driven by kickSmoothAnim) so each frame recomposites
+      // the whole stack. GPU/compose-bound, not main-thread-bound.
+      if (this.overdrawVisible) {
+        Stack() {
+          ForEach(this.overdrawLayers, (_i: number) => {
+            Column()
+              .width('100%')
+              .height('100%')
+              .backgroundColor('rgba(255, 0, 0, 0.2)')
+          }, (i: number) => `od-${i}`)
+          Row() {
+            Column()
+              .width(40)
+              .height(40)
+              .backgroundColor('#BB86FC')
+              .margin({ left: this.animPos })
+          }
+          .width('100%')
+          .height(60)
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#1A1A1A')
+      }
 
       // FPS overlay — remounted (keyed on activeScenario) so droppedCount
       // resets to zero for each scenario run, giving a fresh per-scenario
