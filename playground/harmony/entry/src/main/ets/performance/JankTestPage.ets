@@ -160,23 +160,40 @@ struct JankTestPage {
         .width('100%').layoutWeight(1).scrollBar(BarState.Off).edgeEffect(EdgeEffect.None)
         .backgroundColor(Color.White)
 
-        // Scenario buttons — wrap so all are visible/tappable (a single
-        // horizontal Row overflowed and most buttons were unreachable).
-        Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
-          ForEach(SCENARIO_BUTTONS, (name: string, i: number) => {
-            Button(name)
-              .fontSize(11)
-              .backgroundColor(this.activeScenario === name && this.isRunning ? '#03DAC5' : COLORS[i % COLORS.length])
+        // Buttons, grouped: 7 jank scenarios wrap above; Stop (red, control)
+        // + animateTo (smooth-compare) as a full-width control row below.
+        Column() {
+          Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
+            ForEach(SCENARIO_BUTTONS, (name: string, i: number) => {
+              Button(name)
+                .fontSize(11)
+                .backgroundColor(this.activeScenario === name && this.isRunning ? '#03DAC5' : COLORS[i % COLORS.length])
+                .fontColor(Color.White)
+                .margin({ left: 4, right: 4, top: 4, bottom: 4 })
+                .onClick(() => this.runScenario(name))
+            })
+          }
+          .width('100%')
+
+          Row() {
+            Button('Stop')
+              .fontSize(13)
+              .backgroundColor(this.isRunning ? '#FF6666' : '#993333')
               .fontColor(Color.White)
-              .margin({ left: 4, right: 4, top: 4, bottom: 4 })
-              .onClick(() => this.runScenario(name))
-          })
-          Button('Stop')
-            .fontSize(11).backgroundColor('#FF6666').fontColor(Color.White).margin({ left: 4, right: 4, top: 4, bottom: 4 })
-            .onClick(() => this.stopEverything())
-          Button('animateTo')
-            .fontSize(11).backgroundColor('#4D95E5').fontColor(Color.White).margin({ left: 4, right: 4, top: 4, bottom: 4 })
-            .onClick(() => this.startSmoothAnim())
+              .layoutWeight(1)
+              .margin({ left: 4, right: 4 })
+              .onClick(() => this.stopEverything())
+            Button('animateTo · 流畅对照')
+              .fontSize(11)
+              .backgroundColor('#4D95E5')
+              .fontColor(Color.White)
+              .layoutWeight(1)
+              .margin({ left: 4, right: 4 })
+              .onClick(() => this.startSmoothAnim())
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.SpaceEvenly)
+          .margin({ top: 4 })
         }
         .width('100%')
         .padding({ left: 8, right: 8, top: 4, bottom: 8 })
