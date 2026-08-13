@@ -939,6 +939,8 @@ struct Index {
             .fontWeight(FontWeight.Medium)
             .fontColor(Color.White)
             .margin({ left: 16 })
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
 
           Image($r('app.media.ic_scan'))
@@ -965,12 +967,6 @@ struct Index {
           }
           .margin({ right: 12 })
           .alignItems(VerticalAlign.Center)
-
-          Text('Jank Lab')
-            .fontSize(14)
-            .fontColor(Color.White)
-            .margin({ right: 12 })
-            .onClick(() => { this.openJankLab(); })
 
           Row() {
             Text('📊')
@@ -1040,6 +1036,21 @@ struct Index {
             .height(56)
             .backgroundColor(this.isDarkMode ? COLOR_PRIMARY_DARK : COLOR_PRIMARY_LIGHT)
             .alignItems(VerticalAlign.Center)
+
+            Row() {
+              Text('🧪 Jank Lab')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.isDarkMode ? COLOR_TEXT_DARK : COLOR_TEXT_LIGHT)
+                .layoutWeight(1)
+              Text('›')
+                .fontSize(18)
+                .fontColor(this.isDarkMode ? COLOR_TEXT_DARK_TERTIARY : COLOR_TEXT_LIGHT_TERTIARY)
+            }
+            .width('100%')
+            .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+            .backgroundColor(this.isDarkMode ? COLOR_BG_DARK_TERTIARY : COLOR_BG_LIGHT_SECONDARY)
+            .onClick(() => { this.openJankLab(); })
 
             Scroll() {
               Column() {
