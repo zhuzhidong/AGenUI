@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Generate A2UI Show/Jank structural-jank stories into resource + harmony rawfile."""
+"""Generate top-level Jank structural-jank stories into resource + harmony rawfile."""
 import json
 import os
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RESOURCE_BASE = os.path.join(REPO, "playground", "resource", "stories", "A2UI Show", "Jank")
+RESOURCE_BASE = os.path.join(REPO, "playground", "resource", "stories", "Jank")
 RAWFILE_BASE = os.path.join(
     REPO, "playground", "harmony", "entry", "src", "main", "resources",
-    "rawfile", "stories", "A2UI Show", "Jank",
+    "rawfile", "stories", "Jank",
 )
 
 def write(name: str, payload: dict) -> None:

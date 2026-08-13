@@ -29,21 +29,21 @@
 
 ```txt
 playground/harmony/entry/src/main/
-├── resources/rawfile/stories/A2UI Show/Jank/        ← 结构型（纯 JSON，进菜单）
+├── resources/rawfile/stories/Jank/               ← 结构型（纯 JSON，进菜单，一级分类）
 │   ├── MassiveTree/updateComponents.json
 │   ├── DeepNesting/updateComponents.json
 │   ├── Overdraw/updateComponents.json
 │   └── HugePayload/updateComponents.json
 ├── ets/components/
 │   └── FpsOverlay.ets            ← 共享，displaySync 驱动的帧率覆盖层
-├── ets/performance/               ← 新目录
+├── ets/performance/              ← 新目录
 │   ├── JankTestPage.ets          ← @Entry，时序型可见页
 │   ├── JankScenarioEngine.ets    ← 时序坏行为驱动器集合
 │   └── jankStories.ets           ← 基准画面 + 时序页私有 JSON 常量（.ets 以匹配工程约定）
 └── resources/base/profile/main_pages.json           ← 加 pages/JankTestPage
 ```
 
-- **结构型**：4 个 `updateComponents.json` 放进 story 目录，`AGenUIDemoPage` 菜单自动出现 "Jank" 分类。顶栏加 `📊 FPS` 开关，开启后挂 `FpsOverlay`，结构型卡顿也带帧率。
+- **结构型**：4 个 `updateComponents.json` 放进 story 目录，作为一级分类 `Jank`（与 `A2UI Show` 平级），`AGenUIDemoPage` 菜单出现 "Jank" 分类（菜单为两级：一级 `A2UI Show` / `Jank`，二级为各 story 叶子）。顶栏加 `📊 FPS` 开关，开启后挂 `FpsOverlay`，结构型卡顿也带帧率。
 - **时序型**：新 `JankTestPage`（`@Entry`），自有 `SurfaceManager` + 可见 `AGenUIContainer` 渲染基准画面 + 场景按钮 + `FpsOverlay`。从 `AGenUIDemoPage` 顶栏加入口按钮，用 ArkUI `router.pushUrl('pages/JankTestPage')` 跳转，无需新 Ability。
 
 ## 4. 组件职责
@@ -85,9 +85,9 @@ aboutToAppear
 
 ### 7.1 结构型（JSON story，4 个）
 
-放 `playground/resource/stories/A2UI Show/Jank/<Name>/updateComponents.json`。组件只用 Text/Column/Row（无媒体资源依赖）。
+放 `playground/resource/stories/Jank/<Name>/updateComponents.json`（一级分类 `Jank`，与 `A2UI Show` 平级；`AGenUIDemoPage` 菜单为两级，故须作为一级分类才能在二级出现 story 叶子）。组件只用 Text/Column/Row（无媒体资源依赖）。
 
-> **同步机制待确认**：仓库中 `playground/resource/stories/`（跨平台 canonical 源）与 `playground/harmony/entry/src/main/resources/rawfile/stories/`（DevEco 运行时实际读取）是两份 git 跟踪的副本，未发现自动同步脚本（比对 List story 显示 rawfile 副本已落后于 resource 源）。实现时需把 4 个 JSON 写入 resource 源**并**复制到 harmony rawfile，或先确认/建立同步脚本。
+> **同步机制**：仓库中 `playground/resource/stories/`（跨平台 canonical 源）与 `playground/harmony/entry/src/main/resources/rawfile/stories/`（DevEco 运行时实际读取）是两份 git 跟踪的副本，由生成脚本 `scripts/harmony/gen_jank_stories.py` 同时写入两处保持同步。
 
 | Story         | 卡顿机理                                        | 规模                               |
 | ------------- | ----------------------------------------------- | ---------------------------------- |
